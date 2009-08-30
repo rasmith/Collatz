@@ -14,19 +14,12 @@ char buf[8];
 unsigned int idx=0;
 char ch;
 
-unsigned int read_num() {
-	idx=0;
-	while(isdigit((ch=getchar()))) {
-		buf[idx++]=ch;
-	}
-	buf[idx++]='\n';
-	buf[idx]='\0';
-	return atoi(buf);
-}
+unsigned int compute_cycle_len(unsigned int);
 
 unsigned int get_cached_len(unsigned int n) {
 	return 0;
 }
+
 unsigned int get_cycle_len(unsigned int n) {
 	unsigned int l = get_cached_len(n);
 	if(l==0) {
@@ -65,16 +58,13 @@ unsigned long int compute_max_cycle_len(unsigned int min, unsigned int max) {
 }
 
 int main (int argc, char ** argv) {
-	bool done = false;
 	unsigned  int min;
 	unsigned  int max;
 	unsigned  int min0;
 	unsigned  int max0;
 	unsigned  int  maxlen;
 	unsigned  int temp;
-	while(!done) {
-		min= (unsigned  int)read_num();
-		max = (unsigned int)read_num();
+	while(scanf("%u %u",&min,&max)==2) {
 		min0=min;
 		max0=max;
 		if(min > max) {
@@ -84,7 +74,7 @@ int main (int argc, char ** argv) {
 		}
 		maxlen =compute_max_cycle_len(min,max);
 		printf("%u %u %u\n",min0,max0,maxlen);
-		done = (ch == EOF);
+		
 	}
 	return 0;
 }
