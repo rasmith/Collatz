@@ -14,41 +14,25 @@
 #define CACHEINDEX(n) (n & (CACHE_MASK))
 
 typedef unsigned int uint;
+typedef short unsigned int suint;
 
 struct entry  {
-	uint value;
-	short unsigned int cycle_len;
+	uint  value;
+	suint cycle_len;
 };
 
 entry cache[CACHE_SIZE];
 
 uint compute_cycle_len(uint);
-/**
+
 inline uint get_cached_len(uint n) {
-	entry * e = cache+CACHEINDEX(n);
-	return (n==e->value ? e->hits++, e->cycle_len : 0);
+	entry * e = cache + CACHEINDEX(n);
+	return (n==e->value?e->cycle_len:0);
 }
 
 inline void put_cached_len(uint n, uint l) { 
 	entry * e = cache + CACHEINDEX(n);
-	if(l > e->cycle_len*e->hits) {
-		e->cycle_len=l;
-		e->value=n;
-		e->hits=1;
-	}
-}**/
-
-inline uint get_cached_len(uint n) {
-	entry * e = cache + (n & 0x1FFFF);
-	if(n==e->value) {
-		return e->cycle_len;
-	}
-	return 0;
-}
-
-inline void put_cached_len(uint n, uint l) { 
-	entry * e = cache + (n & 0x01FFFF);
-	if(l>=e->cycle_len) {
+	if(l>e->cycle_len) {
 		e->cycle_len=l;
 		e->value=n;
 	}
@@ -63,7 +47,7 @@ inline uint compute_cycle_len(uint n) {
 		lookup=get_cached_len(m);
 		if(lookup != 0) {
 			len = len+lookup-1;
-			break;
+			return len;
 		} else
 		if( (m & 0x1)  == 0) {		
 				m = m >> 1;
