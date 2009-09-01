@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define CACHE_MASK 0x1FFFF
+#define CACHE_MASK 0x01FFFF
 #define CACHE_SIZE ( (CACHE_MASK)+1)
 #define CACHEINDEX(n) (n & (CACHE_MASK))
 
@@ -18,53 +18,52 @@ typedef unsigned int uint;
 struct entry  {
 	uint value;
 	short unsigned int cycle_len;
-	short unsigned int hits;
 };
 
 entry cache[CACHE_SIZE];
 
 uint compute_cycle_len(uint);
-
-inline bool lookup_cached_len(uint n) {
-	return (cache[ CACHEINDEX(n) ].value  == n);
-}
-
+/**
 inline uint get_cached_len(uint n) {
-	uint result=0;
-	uint idx = CACHEINDEX(n);
-	entry * e = cache+idx;
-	if(n==e->value) {
-		result=e->cycle_len;
-		e->hits++;
-	}
-	return result;
+	entry * e = cache+CACHEINDEX(n);
+	return (n==e->value ? e->hits++, e->cycle_len : 0);
 }
 
-inline void put_cached_len(uint n, uint l) {
-	uint idx =  CACHEINDEX(n);
-	entry * e = cache+idx;
+inline void put_cached_len(uint n, uint l) { 
+	entry * e = cache + CACHEINDEX(n);
 	if(l > e->cycle_len*e->hits) {
 		e->cycle_len=l;
 		e->value=n;
 		e->hits=1;
 	}
+}**/
+
+inline uint get_cached_len(uint n) {
+	entry * e = cache + (n & 0x1FFFF);
+	if(n==e->value) {
+		return e->cycle_len;
+	}
+	return 0;
 }
 
-inline uint get_cycle_len(uint n) {
-	uint l = get_cached_len(n);
-	if(l==0) {
-		l=compute_cycle_len(n);
-		put_cached_len(n,l);
-	} 
-	return l;
+inline void put_cached_len(uint n, uint l) { 
+	entry * e = cache + (n & 0x01FFFF);
+	if(l>=e->cycle_len) {
+		e->cycle_len=l;
+		e->value=n;
+	}
+	return;
 }
 
 inline uint compute_cycle_len(uint n) {
 	register uint len=1;
 	register uint m=n;
+	register uint lookup=0;
 	while(m!=1) {
-		if(lookup_cached_len(m)) {
-			return len+get_cached_len(m)-1;
+		lookup=get_cached_len(m);
+		if(lookup != 0) {
+			len = len+lookup-1;
+			break;
 		} else
 		if( (m & 0x1)  == 0) {		
 				m = m >> 1;
@@ -74,6 +73,7 @@ inline uint compute_cycle_len(uint n) {
 			len++;
 		}
 	}
+	put_cached_len(n,len);
 	return len;
 }
 
@@ -82,7 +82,7 @@ inline uint compute_max_cycle_len(uint min, uint max) {
 	register uint curlen=0;
 	register uint i;
 	for(i=min;i<=max;i++) {
-		curlen = get_cycle_len(i);
+		curlen = compute_cycle_len(i);
 		if(curlen>maxlen) {
 			maxlen=curlen;
 		}
